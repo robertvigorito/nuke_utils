@@ -4,8 +4,8 @@
 
 AUTHOR			= rob-v
 PACKAGE			= nuke_utils
-VERSION 		= 0.1.0-rc.2
-DESCRIPTION 	= Nuke wrapper module
+VERSION 		= 0.1.0-rc.3
+DESCRIPTION 	= Nuke artist assist tools and scripts
 
 # ---------------------------------------------------
 # Config
