@@ -106,11 +106,12 @@ deploy-check:
 	@if [ "$(STATUS)" ]; then\
 		git status;\
 		echo "\n\033[1mPlease commit changes before executing deploy!\033[0m";\
+		exit 1; \
 	else \
 		git tag -f v$(VERSION);\
 		git push;\
 		git push --tags -f;\
 	fi
 
-deploy: deploy-check
+deploy: deploy-check all
 
