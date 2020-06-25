@@ -48,52 +48,69 @@ NUKE.FILES = $(shell find $(NUKE.ROOT) -type f -name "*.py")
 # Rules
 # ---------------------------------------------------
 
-.PHONY: test all install deploy
+.PHONY: all
 
-all: clean test install
+all: test install
 
 clean:
 	@echo Cleaning the .build directory
 	@rm -f -r .build
 
 scripts:
-	$(eval TEMP=$(shell echo /software/scripts/$(PACKAGE)/ | tr A-Z a-z))
 	@echo Installing scripts to $(TEMP)
 	@rm -r -f $(TEMP)
 	@if [ $(SCRIPTS.FILES) ]; then\
 		@mkdir -p $(TEMP);\
-		@install -v -m 555 $(SCRIPTS.FILES) $(TEMP);\
+		@install -v -m $(MODE) $(SCRIPTS.FILES) $(TEMP);\
 	else \
 		echo "No scripts to install, continue...";\
 	fi
+
+scripts-install:
+	$(eval TEMP=$(shell echo /software/scripts/$(PACKAGE)/ | tr A-Z a-z))
+	$(eval MODE=555)
+
+scripts-test:
+	$(eval TEMP=$(shell echo .build/scripts/$(PACKAGE)/ | tr A-Z a-z))
+	$(eval MODE=744)
+
 python:
-	$(eval NUKE_TEMP=$(shell echo /software/tools/nuke/$(PACKAGE)/$(VERSION)))
-	@echo Installing Python Module to $(NUKE_TEMP)
-	@rm -r -f $(NUKE_TEMP)
-	@mkdir -p $(NUKE_TEMP)
+	@echo Installing Python Module to $(TEMP)
+	@rm -r -f $(TEMP)
+	@mkdir -p $(TEMP)
+	@for PY in $(NUKE.FILES); do \
+		echo "compiling and copying $$PY -> $(TEMP)" ; \
+		python -m py_compile $$PY ; \
+		v=$${PY%/*} ; \
+		v=$(TEMP)$${v#./nuke} ; \
+		mkdir -p $$v ; \
+		install -v -m $(MODE) $$PY $$v ; \
+	done
+	@echo "Completed..."
 
+python-install:
+	$(eval TEMP=$(shell echo /software/tools/nuke/$(PACKAGE)/$(VERSION)))
+	$(eval MODE=444)
 
-test:
-	$(eval NUKE_TEMP=$(shell echo .build/nuke/$(PACKAGE)/$(VERSION)))
-	@echo Installing Nuke to $(NUKE_TEMP)
-	@mkdir -p $(NUKE_TEMP)
-	@install -v -m 444 $(NUKE.FILES) $(NUKE_TEMP)
-	@if [ $(SCRIPTS.FILES) ]; then\
-	    @mkdir -p .build/scripts;\
-	    install -m 555 -v $(SCRIPTS.FILES) .build/scripts/; \
-    fi
+python-test:
+	$(eval TEMP=$(shell echo .build/nuke/$(PACKAGE)/$(VERSION)))
+	$(eval MODE=644)
 
-deploy:
-	$(eval NUKE_TEMP=$(shell echo /software/tools/nuke/$(PACKAGE)/$(VERSION)))
-	@echo Installing Nuke to $(NUKE_TEMP)
-	@mkdir -p $(NUKE_TEMP)
-	@-unlink "$(shell dirname $(NUKE_TEMP))/latest"
-	@ln -s "$(NUKE_TEMP)/" "$(shell dirname $(NUKE_TEMP))/latest"
-	@install -v -m 444 $(NUKE.FILES) $(NUKE_TEMP)
-	@if [ $(SCRIPTS.FILES) ]; then\
-	    @mkdir -p .build/scripts;\
-	    install -m 555 -v $(SCRIPTS.FILES) .build/scripts/; \
-    fi
-	-git tag v$(VERSION)
-	-git push --tags
+test: scripts-test python-test clean scripts  python
+
+install: clean scripts-install scripts python-install python
+
+deploy-check:
+	@# Check if there are commits that need to be complete
+	$(eval STATUS=$(shell git status --porcelain))
+	@if [ "$(STATUS)" ]; then\
+		git status;\
+		echo "\n\033[1mPlease commit changes before executing deploy!\033[0m";\
+	else \
+		git tag -f v$(VERSION);\
+		git push;\
+		git push --tags -f;\
+	fi
+
+deploy: deploy-check
 
