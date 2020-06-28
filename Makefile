@@ -4,7 +4,7 @@
 
 AUTHOR			= rob-v
 PACKAGE			= nuke_utils
-VERSION 		= 0.1.0-rc.3
+VERSION 		= 0.2.0
 DESCRIPTION 	= Nuke artist assist tools and scripts
 
 # ---------------------------------------------------
@@ -48,9 +48,9 @@ NUKE.FILES = $(shell find $(NUKE.ROOT) -type f -name "*.py")
 # Rules
 # ---------------------------------------------------
 
-.PHONY: all
+.PHONY: test
 
-all: test install
+all: clean test install
 
 clean:
 	@echo Cleaning the .build directory
@@ -69,6 +69,8 @@ scripts:
 scripts-install:
 	$(eval TEMP=$(shell echo /software/scripts/$(PACKAGE)/ | tr A-Z a-z))
 	$(eval MODE=555)
+	@echo "In here"
+	$(make scripts)
 
 scripts-test:
 	$(eval TEMP=$(shell echo .build/scripts/$(PACKAGE)/ | tr A-Z a-z))
@@ -96,14 +98,17 @@ python-test:
 	$(eval TEMP=$(shell echo .build/nuke/$(PACKAGE)/$(VERSION)))
 	$(eval MODE=644)
 
-test: scripts-test python-test clean scripts  python
+test:
+	@echo "in here"
+	$(make scripts-test)
+	$(make scripts)
 
 install: clean scripts-install scripts python-install python
 
 deploy-check:
 	@# Check if there are commits that need to be complete
 	$(eval STATUS=$(shell git status --porcelain))
-	@if [ "$(STATUS)" ]; then\
+	@if [  ! "$(STATUS)" ]; then\
 		git status;\
 		echo "\n\033[1mPlease commit changes before executing deploy!\033[0m";\
 		exit 1; \
@@ -113,5 +118,7 @@ deploy-check:
 		git push --tags -f;\
 	fi
 
-deploy: deploy-check all
+deploy: scripts-test scripts scripts-install scripts python-install python
+	-@unlink "/software/tools/nuke/$(PACKAGE)/latest"
+	-@ln -s $(TEMP) "/software/tools/nuke/$(PACKAGE)/latest"
 
