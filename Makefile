@@ -108,7 +108,7 @@ install: clean scripts-install scripts python-install python
 deploy-check:
 	@# Check if there are commits that need to be complete
 	$(eval STATUS=$(shell git status --porcelain))
-	@if [  ! "$(STATUS)" ]; then\
+	@if [ "$(STATUS)" ]; then\
 		git status;\
 		echo "\n\033[1mPlease commit changes before executing deploy!\033[0m";\
 		exit 1; \
@@ -118,7 +118,7 @@ deploy-check:
 		git push --tags -f;\
 	fi
 
-deploy: scripts-test scripts scripts-install scripts python-install python
+deploy: deploy-check scripts-test scripts scripts-install scripts python-install python
 	-@unlink "/software/tools/nuke/$(PACKAGE)/latest"
 	-@ln -s $(TEMP) "/software/tools/nuke/$(PACKAGE)/latest"
 
