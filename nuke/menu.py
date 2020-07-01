@@ -3,7 +3,7 @@ import nuke_utils.quickies as _quickies
 import nuke_utils.callbacks as _callbacks
 
 # Menu creation for `WGID Scripts`
-__top_menu = nuke.menu("Nuke").addMenu("&WDIG")
+__top_menu = nuke.menu("Nuke").addMenu("WDIG")
 
 
 # Append Tools

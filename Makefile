@@ -4,7 +4,7 @@
 
 AUTHOR			= rob-v
 PACKAGE			= nuke_utils
-VERSION 		= 0.2.0
+VERSION 		= 0.2.1
 DESCRIPTION 	= Nuke artist assist tools and scripts
 
 # ---------------------------------------------------
