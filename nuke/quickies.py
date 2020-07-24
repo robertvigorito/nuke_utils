@@ -1,4 +1,6 @@
 import nuke
+import os
+import re
 
 
 def set_localization(flag):
@@ -20,7 +22,34 @@ def set_localization(flag):
     return True
 
 
+def read_from_write():
+    """
+    Create a read node from the write node, if the path is a mov, create from user text
+    else look into the directory for the frame range.
 
+    Returns:
+        (nuke.node) Read node
+    """
+    node = nuke.selectedNode()
+    if node.Class() != "Write":
+        return False
 
+    pattern = r"^\w+.(\d+)."
+    path = node["file"].getValue()
+
+    if path.endswith('.mov') and os.path.exists(path):
+        read = nuke.nodes.Read(xpos=node.xpos(), ypos=node.ypos() + 100)
+        read['file'].fromUserText(path)
+    else:
+        try:
+            frames = sorted(os.listdir(os.path.dirname(path)))
+            first = re.findall(pattern=pattern, string=frames[0])[0]
+            last = re.findall(pattern=pattern, string=frames[-1])[0]
+        except IndexError:
+            first, last = nuke.root().firstFrame(), nuke.root().lastFrame()
+
+        read = nuke.nodes.Read(xpos=node.xpos(), ypos=node.ypos() + 100, file=path, first=first, last=last)
+
+    return read
 
 
